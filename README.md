@@ -13,8 +13,8 @@ controller input and correct graphics.
 - The SAROO FPGA is the official build 06, unmodified. Its AA24 support maps
   the whole 16 MiB MPR ROM into SAROO SDRAM at the original cart addresses.
 - The SAROO MCU app (`mcuapp.bin`) needs two extra commands: STVLOAD loads
-  the ROM file from SD into SDRAM, and ROMCTL switches the AA24 mapping. It
-  is not part of this repository.
+  the ROM file from SD into SDRAM, and ROMCTL switches the AA24 mapping.
+  `saroo-mcu/` has the patch for the official SAROO v0.9 source.
 - This repository is the Saturn side, a CD loader plus resident runtime
   (`runtime/`). It loads the FPR program and patches the game in RAM,
   checking the original bytes before each patch. A native ST-V BIOS
@@ -37,8 +37,8 @@ images stay in `build/`, which is not committed.
 - `SEGA/`: the Saturn disc boot files `sys_sec.bin`, `sys_arej.bin`, `sys_aree.bin`,
   `sys_areu.bin` and `sys_aret.bin`. Copy them from `Firm_Saturn/sega/` in the
   official SAROO repository (https://github.com/tpunix/SAROO). The build stops if any is missing.
-- For hardware: SAROO HW 1.3+, official FPGA 06, and an MCU app with the
-  STVLOAD/ROMCTL commands
+- For hardware: SAROO HW 1.3+, official FPGA 06, and an MCU app built with
+  `saroo-mcu/saroo-stv-mcu.patch` (see `saroo-mcu/README.md`)
 
 ## Build
 

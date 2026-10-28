@@ -9,7 +9,7 @@ saroo-stv は、光学ドライブエミュレーターカートリッジ SAROO 
 ## 仕組み
 
 - **FPGA**：SAROO 公式 FPGA ビルド 06（改造なし）。AA24 アドレス線に対応しており、16 MiB の MPR ROM 全体を元のカートリッジと同じアドレスで SAROO の SDRAM にマッピングできます。
-- **MCU**：SAROO の MCU プログラム（`mcuapp.bin`）にコマンドを 2 つ追加する必要があります。STVLOAD は SD カード上の ROM ファイルを SDRAM に読み込み、ROMCTL は AA24 マッピングを切り替えます。MCU プログラムはこのリポジトリには含まれていません。
+- **MCU**：SAROO の MCU プログラム（`mcuapp.bin`）にコマンドを 2 つ追加する必要があります。STVLOAD は SD カード上の ROM ファイルを SDRAM に読み込み、ROMCTL は AA24 マッピングを切り替えます。パッチは `saroo-mcu/` にあり、SAROO 公式 v0.9 のソースに適用します。
 - **サターン側（このリポジトリ）**：CD ローダーと常駐ランタイム（`runtime/`）。FPR プログラムを読み込み、RAM 上でゲームにパッチを当てます。パッチを当てる前には必ず元のバイト列を確認します。ST-V BIOS の機能は `hle/` にある独自実装の代替コードが提供し、ランタイムが ST-V の入力とサウンドをサターンのハードウェアに対応させます。
 
 ## 著作権について
@@ -21,7 +21,7 @@ saroo-stv は、光学ドライブエミュレーターカートリッジ SAROO 
 - `sh-elf` GCC ツールチェーン（`sh-elf-gcc`、`sh-elf-as`、`sh-elf-ld`）と Python 3（Linux または WSL）
 - `ROMS/`：バクバクアニマルの ST-V ROM（`fpr17969.13`, `mpr17970.2`, `mpr17971.3`, `mpr17972.4`, `mpr17973.5`）と ST-V BIOS `stv-jp-20091.bin`
 - `SEGA/`：サターンのディスク起動用ファイル `sys_sec.bin`、`sys_arej.bin`、`sys_aree.bin`、`sys_areu.bin`、`sys_aret.bin`。SAROO 公式リポジトリ（https://github.com/tpunix/SAROO）の `Firm_Saturn/sega/` からコピーしてください。1 つでも欠けているとビルドはエラーで止まります。
-- 実機で動かす場合：SAROO HW 1.3 以降、公式 FPGA 06、STVLOAD/ROMCTL コマンドを追加した MCU プログラム
+- 実機で動かす場合：SAROO HW 1.3 以降、公式 FPGA 06、`saroo-mcu/saroo-stv-mcu.patch` を当ててビルドした MCU プログラム（`saroo-mcu/README.ja.md` を参照）
 
 ## ビルド
 
