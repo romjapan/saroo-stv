@@ -1,0 +1,23 @@
+OUTPUT_FORMAT("elf32-sh")
+OUTPUT_ARCH(sh)
+ENTRY(stv_install_reloc_veneers)
+
+MEMORY
+{
+    HLE (rx) : ORIGIN = 0x04400000, LENGTH = 64K
+}
+
+SECTIONS
+{
+    . = ORIGIN(HLE);
+    .text : ALIGN(4) { *(.text*) *(.rodata*) } > HLE
+
+    /DISCARD/ :
+    {
+        *(.comment)
+        *(.debug_*)
+        *(.note*)
+    }
+}
+
+ASSERT(SIZEOF(.text) <= LENGTH(HLE), "native HLE exceeds reserved 64 KB")

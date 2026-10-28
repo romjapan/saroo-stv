@@ -1,0 +1,6 @@
+*.o
+*.elf
+*.bin
+tests/*.o
+tests/*.elf
+tests/*.bin
