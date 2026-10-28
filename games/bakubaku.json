@@ -1,0 +1,50 @@
+{
+  "format": "saroo-stv-game-v1",
+  "game": "bakubaku",
+  "title": "Baku Baku Animal",
+  "port_status": "hardware-candidate",
+  "image_size": 33554432,
+  "roms": [
+    {
+      "name": "fpr17969.13",
+      "size": 1048576,
+      "sha1": "1d226db72d6ef68fd294f60659df7f882b25def6",
+      "operations": [
+        {"type": "load16_byte", "offset": 1},
+        {"type": "copy", "offset": 2097152},
+        {"type": "copy", "offset": 3145728}
+      ]
+    },
+    {
+      "name": "mpr17970.2",
+      "size": 4194304,
+      "sha1": "dcc241dcabea59325decfba3fd5e113c07958422",
+      "operations": [{"type": "word_swap", "offset": 4194304}]
+    },
+    {
+      "name": "mpr17971.3",
+      "size": 4194304,
+      "sha1": "99587eea528a6413cacc3e4d3d1dbfff57b03dca",
+      "operations": [{"type": "word_swap", "offset": 8388608}]
+    },
+    {
+      "name": "mpr17972.4",
+      "size": 4194304,
+      "sha1": "e86acd8096f2aee5f5e3ddfd3abb4f5c2b11df66",
+      "operations": [{"type": "word_swap", "offset": 12582912}]
+    },
+    {
+      "name": "mpr17973.5",
+      "size": 4194304,
+      "sha1": "eeb5efb5216ab8b8fdee4656774bbd5a2a5b2d42",
+      "operations": [{"type": "word_swap", "offset": 16777216}]
+    }
+  ],
+  "auxiliary": [],
+  "required_relocation": {
+    "original": "0x03000000-0x03ffffff",
+    "replacement": "0x04000000-0x04ffffff",
+    "reason": "SAROO PCB does not route Saturn AA24 to the FPGA"
+  },
+  "blockers": []
+}

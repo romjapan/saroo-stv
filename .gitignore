@@ -1,0 +1,24 @@
+# Local tools/session data and recovered archive indexes
+/.hapi/
+/.NAS-ARCHIVE-INDEX/
+/build/
+/reference/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+# User-supplied copyrighted inputs and generated binaries
+*.bin
+*.rom
+*.iso
+*.cue
+*.chd
+*.zip
+*.7z
+*.elf
+*.o
+*.wav
+*.ppm
