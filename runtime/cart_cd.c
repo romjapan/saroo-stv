@@ -63,7 +63,7 @@ static void mpr0_copy(u32 offset,u8 *out,u32 size) {
 int cart_cd_mpr0_resident(void) {return mpr0_ram;}
 #endif
 #ifdef CART_SAROO_ROM
-/* Opt-in: SAROO (stv2ss mcuapp.bin + FPGA 06 AA24 bit) holds all four MPR
+/* Opt-in: SAROO (saroo-stv mcuapp.bin + FPGA 06 AA24 bit) holds all four MPR
    banks in SDRAM at their own guest addresses 0x02400000..0x033fffff.
    Verified per 64 KiB block with a word FNV; bad blocks are reloaded, and
    anything short of a clean pass falls back to CD with AA24 switched off.

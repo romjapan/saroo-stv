@@ -1,8 +1,8 @@
-# stv2ss：在世嘉土星上运行 ST-V 街机游戏
+# saroo-stv：在世嘉土星上运行 ST-V 街机游戏
 
 [English](README.md) | 简体中文 | [日本語](README.ja.md)
 
-stv2ss 借助 SAROO 光驱模拟卡，在真实的世嘉土星上运行世嘉 ST-V 街机游戏。第一款支持的游戏是 **Baku Baku Animal（バクバクアニマル）**。
+saroo-stv 借助 SAROO 光驱模拟卡，在真实的世嘉土星上运行世嘉 ST-V 街机游戏。第一款支持的游戏是 **Baku Baku Animal（バクバクアニマル）**。
 
 已在真实的土星 + SAROO HW 1.3 上测试通过：满速运行，有声音，手柄可用，画面正确。
 
@@ -20,7 +20,7 @@ stv2ss 借助 SAROO 光驱模拟卡，在真实的世嘉土星上运行世嘉 ST
 
 - `sh-elf` GCC 工具链（`sh-elf-gcc`、`sh-elf-as`、`sh-elf-ld`）和 Python 3，运行环境为 Linux 或 WSL
 - `ROMS/`：Baku Baku 的 ST-V ROM（`fpr17969.13`, `mpr17970.2`, `mpr17971.3`, `mpr17972.4`, `mpr17973.5`），以及 ST-V BIOS `stv-jp-20091.bin`
-- `SEGA/`：世嘉 SDK 中的土星启动文件（`sys_sec.bin`, `sys_arej.bin`, `sys_aree.bin`, `sys_areu.bin`, `sys_aret.bin`）
+- `SEGA/`：土星光盘启动文件 `sys_sec.bin`、`sys_arej.bin`、`sys_aree.bin`、`sys_areu.bin`、`sys_aret.bin`。请从 SAROO 官方仓库（https://github.com/tpunix/SAROO）的 `Firm_Saturn/sega/` 目录复制。缺少任何一个，构建都会报错停止。
 - 在真机上运行还需要：SAROO HW 1.3 或更新版本、官方 FPGA 06，以及带 STVLOAD/ROMCTL 命令的 MCU 程序
 
 ## 构建

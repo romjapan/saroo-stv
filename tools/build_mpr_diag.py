@@ -24,7 +24,7 @@ def main():
     p.add_argument('--experimental-sound-align-pack',action='store_true',help='Even-align native sample destinations; diagnostic port patch')
     p.add_argument('--experimental-sound-stream-handoff',action='store_true',help='Master main-loop CD service for missing slave512-byte stream blocks')
     p.add_argument('--loading-screen',action='store_true',help='NOW LOADING bar on NBG0 until just before hardware_test (pre game video init only)')
-    p.add_argument('--saroo-native-rom',action='store_true',help='SAROO (stv2ss mcuapp.bin, FPGA 06 AA24) loads all MPR banks into SDRAM at their guest addresses; verified per 64 KiB, CD fallback')
+    p.add_argument('--saroo-native-rom',action='store_true',help='SAROO (saroo-stv mcuapp.bin, FPGA 06 AA24) loads all MPR banks into SDRAM at their guest addresses; verified per 64 KiB, CD fallback')
     p.add_argument('--saroo-native-assume',action='store_true',help='TEST ONLY: skip SAROO commands; expect an emulator ST-V cart (Yabause CartType=12) at the MPR addresses')
     p.add_argument('--saroo-diag',action='store_true',help='Hardware diagnostics: VBlank PC profile, input trace and SD dumps every 10 s (PADDIAG/PROFILE/TRACE/FAIL); each dump stalls the game')
     p.add_argument('--experimental-mpr0-cart-ram',action='store_true',help='Copy MPR0 into a detected 4 MiB RAM cart (identity window); CD fallback without cart')
@@ -561,9 +561,9 @@ static void irq_test(void) {
  *(volatile u8 *)0xfffffe92=0x10;
  TRACE[1]=23;
  game_handoff();finish''')
-            if os.environ.get('STV2SS_ABUS_MATRIX'):  # hardware diagnosis: A-bus read matrix, then halt
+            if os.environ.get('SAROO_STV_ABUS_MATRIX'):  # hardware diagnosis: A-bus read matrix, then halt
                 source=source.replace(' *(volatile u32 *)0x26010624=0x26010622u;'+chr(10),' *(volatile u32 *)0x26010624=0x26010622u;'+chr(10)+' cart_cd_saroo_matrix();'+chr(10))
-            if os.environ.get('STV2SS_FORCE_TCR2'):  # test-only: mimic real-hardware FRT /128
+            if os.environ.get('SAROO_STV_FORCE_TCR2'):  # test-only: mimic real-hardware FRT /128
                 source=source.replace(' *(volatile u32 *)0x26010624=0x26010622u;'+chr(10),' *(volatile u32 *)0x26010624=0x26010622u;'+chr(10)+' *(volatile u8 *)0xfffffe16=2;'+chr(10))
             extra_sources.append(runtime/'game_video_init.s')
             if a.test_game_startup_init:
@@ -579,7 +579,7 @@ static void irq_test(void) {
                         value=2166136261
                         for byte in banks[3][offset:offset+512]:value=((value^byte)*16777619)&0xffffffff
                         hashes.append(value)
-                    if os.environ.get('STV2SS_FORCE_A22'):hashes[0]^=1  # test-only: exercise the failure page
+                    if os.environ.get('SAROO_STV_FORCE_A22'):hashes[0]^=1  # test-only: exercise the failure page
                     prefetch='''
  {
   u32 n,k,h;u8 *base=(u8 *)0x20231000;
@@ -1545,7 +1545,7 @@ static void irq_test(void) {
     if a.saroo_native_rom:
         disc_manifest['saroo_native_rom']={'sd_file':'/SAROO/STV/BAKUMPR.BIN','sdram':'0x400000 (guest 0x02400000..0x033fffff)',
             'bakumpr_sha256':hashlib.sha256((out/'BAKUMPR.BIN').read_bytes()).hexdigest(),
-            'stats_symbol':'_cart_saroo_stats','requires':'stv2ss mcuapp.bin (SSCMD 0x40/0x41), FPGA 06+ on HW1.3',
+            'stats_symbol':'_cart_saroo_stats','requires':'saroo-stv mcuapp.bin (SSCMD 0x40/0x41), FPGA 06+ on HW1.3',
             'fallback':'CD','assume_emulator_cart':a.saroo_native_assume,'hardware_accepted':False}
     if a.experimental_mpr0_cart_ram:
         disc_manifest['experimental_mpr0_cart_ram']={'window':'0x02400000..0x027fffff','cart_id':'0x5c',

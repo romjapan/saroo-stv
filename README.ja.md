@@ -1,8 +1,8 @@
-# stv2ss：セガサターンで ST-V アーケードゲームを動かす
+# saroo-stv：セガサターンで ST-V アーケードゲームを動かす
 
 [English](README.md) | [简体中文](README.zh-CN.md) | 日本語
 
-stv2ss は、光学ドライブエミュレーターカートリッジ SAROO を使い、実機のセガサターンでセガ ST-V のアーケードゲームを動かすプロジェクトです。最初の対応タイトルは **バクバクアニマル（Baku Baku Animal）** です。
+saroo-stv は、光学ドライブエミュレーターカートリッジ SAROO を使い、実機のセガサターンでセガ ST-V のアーケードゲームを動かすプロジェクトです。最初の対応タイトルは **バクバクアニマル（Baku Baku Animal）** です。
 
 実機のサターン + SAROO HW 1.3 で動作確認済みです。フルスピードで動作し、サウンド・コントローラー入力・画面表示とも正常です。
 
@@ -20,7 +20,7 @@ stv2ss は、光学ドライブエミュレーターカートリッジ SAROO を
 
 - `sh-elf` GCC ツールチェーン（`sh-elf-gcc`、`sh-elf-as`、`sh-elf-ld`）と Python 3（Linux または WSL）
 - `ROMS/`：バクバクアニマルの ST-V ROM（`fpr17969.13`, `mpr17970.2`, `mpr17971.3`, `mpr17972.4`, `mpr17973.5`）と ST-V BIOS `stv-jp-20091.bin`
-- `SEGA/`：セガ SDK に含まれるサターンの起動用ファイル（`sys_sec.bin`, `sys_arej.bin`, `sys_aree.bin`, `sys_areu.bin`, `sys_aret.bin`）
+- `SEGA/`：サターンのディスク起動用ファイル `sys_sec.bin`、`sys_arej.bin`、`sys_aree.bin`、`sys_areu.bin`、`sys_aret.bin`。SAROO 公式リポジトリ（https://github.com/tpunix/SAROO）の `Firm_Saturn/sega/` からコピーしてください。1 つでも欠けているとビルドはエラーで止まります。
 - 実機で動かす場合：SAROO HW 1.3 以降、公式 FPGA 06、STVLOAD/ROMCTL コマンドを追加した MCU プログラム
 
 ## ビルド

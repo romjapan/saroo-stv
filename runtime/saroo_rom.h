@@ -8,7 +8,7 @@
 extern void (*saroo_poll_hook)(u32 polls);
 u32 saroo_id(void);
 int saroo_present(void);
-/* 0 ok, -1 timeout (MCU lacks the stv2ss commands). ctrl = ST_CTRL[15:8]. */
+/* 0 ok, -1 timeout (MCU lacks the saroo-stv commands). ctrl = ST_CTRL[15:8]. */
 int saroo_romctl(int aa24, u16 *ctrl);
 /* Read SD file into SAROO SDRAM (CS0 offset). size 0 = rest of file.
    Returns 0 ok, negative FatFs error, -1000 timeout. */

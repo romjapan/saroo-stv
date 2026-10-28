@@ -1,8 +1,8 @@
-# stv2ss: Sega ST-V games on a Sega Saturn
+# saroo-stv: Sega ST-V games on a Sega Saturn
 
 English | [简体中文](README.zh-CN.md) | [日本語](README.ja.md)
 
-stv2ss runs Sega ST-V arcade games on a real Sega Saturn, using a SAROO
+saroo-stv runs Sega ST-V arcade games on a real Sega Saturn, using a SAROO
 optical drive emulator cartridge. The first title is **Baku Baku Animal**.
 
 Tested on a real Saturn with a SAROO HW 1.3: full speed, with sound,
@@ -34,7 +34,9 @@ images stay in `build/`, which is not committed.
   Python 3, on Linux or WSL
 - `ROMS/`: the Baku Baku ST-V ROM set (`fpr17969.13`, `mpr17970.2`, `mpr17971.3`, `mpr17972.4`, `mpr17973.5`) and the ST-V BIOS
   `stv-jp-20091.bin`
-- `SEGA/`: the Saturn boot files from the Sega SDK (`sys_sec.bin`, `sys_arej.bin`, `sys_aree.bin`, `sys_areu.bin`, `sys_aret.bin`)
+- `SEGA/`: the Saturn disc boot files `sys_sec.bin`, `sys_arej.bin`, `sys_aree.bin`,
+  `sys_areu.bin` and `sys_aret.bin`. Copy them from `Firm_Saturn/sega/` in the
+  official SAROO repository (https://github.com/tpunix/SAROO). The build stops if any is missing.
 - For hardware: SAROO HW 1.3+, official FPGA 06, and an MCU app with the
   STVLOAD/ROMCTL commands
 

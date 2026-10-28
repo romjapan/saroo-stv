@@ -17,7 +17,7 @@ extern CartMpr0Stats cart_mpr0_stats;
 int cart_cd_mpr0_resident(void);
 #endif
 #ifdef CART_SAROO_ROM
-/* state: 0 untried, 1 no SAROO, 2 MCU lacks stv2ss commands, 3 load failed,
+/* state: 0 untried, 1 no SAROO, 2 MCU lacks saroo-stv commands, 3 load failed,
    4 AA24 not enabled, 5 resident, 6 verification failed after reloads */
 typedef struct {u32 state,id,ctrl,err,reads,bad[3];} CartSarooStats;
 extern CartSarooStats cart_saroo_stats;

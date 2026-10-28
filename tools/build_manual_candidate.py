@@ -43,7 +43,7 @@ def main():
     p.add_argument('--experimental-sound-pad-yield',action='store_true')
     p.add_argument('--loading-screen',action='store_true',help='NOW LOADING progress bar during early boot reads')
     p.add_argument('--experimental-mpr0-cart-ram',action='store_true',help='Opt-in MPR0 copy into a 4 MiB RAM cart')
-    p.add_argument('--saroo-native-rom',action='store_true',help='SAROO SDRAM-backed MPR (stv2ss mcuapp.bin)')
+    p.add_argument('--saroo-native-rom',action='store_true',help='SAROO SDRAM-backed MPR (saroo-stv mcuapp.bin)')
     p.add_argument('--saroo-direct',action='store_true',help='SAROO maps the whole ST-V cart: no resource prefetch/copy redirection, native sound')
     p.add_argument('--saroo-native-assume',action='store_true',help='TEST ONLY: emulator ST-V cart provides the MPR')
     p.add_argument('--saroo-diag',action='store_true',help='SAROO hardware diagnostics with SD dumps every 10 s (stalls the game)')

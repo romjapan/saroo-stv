@@ -1,4 +1,4 @@
-/* SAROO SDRAM-backed ST-V ROM, for the stv2ss MCU commands (mcuapp.bin with
+/* SAROO SDRAM-backed ST-V ROM, for the saroo-stv MCU commands (mcuapp.bin with
    SSCMD_STVLOAD 0x40 / SSCMD_ROMCTL 0x41) on official FPGA 06+.
    Register addresses and the TMPBUFF little-endian parameter block follow
    SAROO v0.9 Firm_Saturn (read_file / LE32W). Every MCU wait is bounded:

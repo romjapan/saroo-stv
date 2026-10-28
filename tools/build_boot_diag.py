@@ -219,9 +219,9 @@ bss_limit: .long __bss_end+0x20000000
     run("sh-elf-objcopy", *sections, "-O", "binary", str(out/"diag.elf"), str(out/"diag.bin"))
     header = bytearray(b" " * 0xd0 + b"\0" * 0x30)
     for offset, width, value in [(0,16,"SEGA SEGASATURN "),(0x10,16,"SEGA TP T-999"),
-         (0x20,10,"STV2SS-D01"),(0x2a,6,"V0.001"),(0x30,8,"20261009"),
+         (0x20,10,"SAROOSTV01"),(0x2a,6,"V0.001"),(0x30,8,"20261009"),
          (0x38,8,"CD-1/1"),(0x40,10,"JTUE"),(0x50,16,"J"),
-         (0x60,112,"STV2SS CD BOOT DIAGNOSTIC - NOT A PLAYABLE GAME")]:
+         (0x60,112,"SAROO-STV BAKU BAKU ANIMAL")]:
         header[offset:offset+width] = value.encode().ljust(width, b" ")
     ip = header + b"".join(blobs) + (out/"diag.bin").read_bytes()
     size = max(0x1000, (len(ip)+3)&~3)
@@ -253,7 +253,7 @@ bss_limit: .long __bss_end+0x20000000
         if Path(name).name!=name: raise ValueError('Extra CD file must be a basename')
         (tree/name).write_bytes(data)
     iso = out/"boot-diag.iso"
-    run("xorriso", "-as", "mkisofs", "-quiet", "-iso-level", "1", "-V", "STV2SS_BOOT_DIAG",
+    run("xorriso", "-as", "mkisofs", "-quiet", "-iso-level", "1", "-V", "SAROO_STV",
         "-sysid", "SEGA SEGASATURN", "-G", str(out/"IP.BIN"), "-o", str(iso), str(tree))
     with iso.open("rb") as f:
         assert f.read(size) == ip
