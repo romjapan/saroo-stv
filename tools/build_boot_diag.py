@@ -48,7 +48,7 @@ def run(*args):
     subprocess.run(args, check=True)
 
 
-def main(argv=None, probe_source=None, extra_sources=(), extra_files=None, stack_address=None):
+def main(argv=None, probe_source=None, extra_sources=(), extra_files=None, stack_address=None, disc_id="SAROOSTV01", disc_title="SAROO-STV BAKU BAKU ANIMAL"):
     p = argparse.ArgumentParser()
     p.add_argument("--sega-dir", type=Path, required=True)
     p.add_argument("--output-dir", type=Path, default=Path("build/boot-diag"))
@@ -219,9 +219,9 @@ bss_limit: .long __bss_end+0x20000000
     run("sh-elf-objcopy", *sections, "-O", "binary", str(out/"diag.elf"), str(out/"diag.bin"))
     header = bytearray(b" " * 0xd0 + b"\0" * 0x30)
     for offset, width, value in [(0,16,"SEGA SEGASATURN "),(0x10,16,"SEGA TP T-999"),
-         (0x20,10,"SAROOSTV01"),(0x2a,6,"V0.001"),(0x30,8,"20261009"),
+         (0x20,10,disc_id),(0x2a,6,"V0.001"),(0x30,8,"20261009"),
          (0x38,8,"CD-1/1"),(0x40,10,"JTUE"),(0x50,16,"J"),
-         (0x60,112,"SAROO-STV BAKU BAKU ANIMAL")]:
+         (0x60,112,disc_title)]:
         header[offset:offset+width] = value.encode().ljust(width, b" ")
     ip = header + b"".join(blobs) + (out/"diag.bin").read_bytes()
     size = max(0x1000, (len(ip)+3)&~3)

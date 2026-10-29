@@ -48,6 +48,7 @@ def main():
     p.add_argument('--saroo-native-assume',action='store_true',help='TEST ONLY: emulator ST-V cart provides the MPR')
     p.add_argument('--saroo-diag',action='store_true',help='SAROO hardware diagnostics with SD dumps every 10 s (stalls the game)')
     a=p.parse_args()
+    introdon=json.loads(a.descriptor.read_text()).get('game')=='introdon'
     if a.experimental_sound_pad_yield and not a.experimental_sound:p.error('pad yield requires experimental sound')
     out=a.output_dir.resolve();out.mkdir(parents=True,exist_ok=False)
     hle=out/'hle';game=out/'game'
@@ -58,6 +59,10 @@ def main():
         [sys.executable,str(ROOT/'tools/build_mpr_diag.py'),'--rom-dir',str(a.rom_dir.resolve()),
          '--descriptor',str(a.descriptor.resolve()),'--sega-dir',str(a.sega_dir.resolve()),
          '--resident-hle',str(hle/'HLE.BIN'),'--output-dir',str(game)]+['--'+f for f in (DIRECT_GAME_FLAGS if a.saroo_direct else GAME_FLAGS)+(SOUND_FLAGS if a.experimental_sound else [])+(['experimental-sound-pad-yield'] if a.experimental_sound_pad_yield else [])+(['experimental-mpr0-cart-ram'] if a.experimental_mpr0_cart_ram else [])+(['loading-screen'] if a.loading_screen else [])+(['saroo-native-rom'] if a.saroo_native_rom else [])+(['saroo-native-assume'] if a.saroo_native_assume else [])+(['saroo-diag'] if a.saroo_diag else [])]]
+    if introdon:
+        commands=commands[:1]
+        commands[0][commands[0].index('--source')+1]=str(ROOT/'hle/reloc_veneers.s')
+        commands[0].append('--introdon-profile')
     (out/'build-profile.json').write_text(json.dumps(dict(commands=commands,
         experimental_sound=a.experimental_sound,
         experimental_sound_pad_yield=a.experimental_sound_pad_yield,
@@ -70,6 +75,13 @@ def main():
     with (out/'build.log').open('wb') as log:
         for command in commands:
             subprocess.run(command,stdout=log,stderr=subprocess.STDOUT,check=True)
+        if introdon:
+            from contextlib import redirect_stdout,redirect_stderr
+            from build_introdon import build
+            # The builder prints JSON; retain a text stream for its output.
+            with (out/'introdon-build.log').open('w') as intro_log:
+                with redirect_stdout(intro_log),redirect_stderr(intro_log):
+                    build(a)
     manifest=json.loads((hle/'manifest.json').read_text())
     if not manifest['manual_pad_profile']['automatic_input_callback_disabled']:
         raise ValueError('Manual input profile was not established')

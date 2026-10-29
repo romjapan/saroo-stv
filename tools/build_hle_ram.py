@@ -5,15 +5,16 @@ import json
 from pathlib import Path
 import subprocess
 import re
+import os
 from align_resident_veneers import adapt as align_resident_veneers
 
-def hle_linker_script():
+def hle_linker_script(base=0x00210000,limit=0x10000):
     # Let the selected SH linker choose its supported ELF format. Explicit
     # -EB at link time fixes target endianness without a binutils-specific name.
     return ('OUTPUT_ARCH(sh)\n'
-        'SECTIONS { . = 0x00210000; .text : { *(.text*) *(.rodata*) } '
+        f'SECTIONS {{ . = 0x{base:08x}; .text : {{ *(.text*) *(.rodata*) }} '
         '/DISCARD/ : { *(.stack) *(.comment) *(.note*) } }\n'
-        'ASSERT(SIZEOF(.text) <= 0x10000, "HLE too large")\n')
+        f'ASSERT(SIZEOF(.text) <= 0x{limit:x}, "HLE too large")\n')
 
 def validate_factory_bios(bios):
     if len(bios)!=0x80000 or bios[0x672c:0x673c]!=bytes.fromhex('000000000100010100000000000808fd'):
@@ -37,6 +38,7 @@ def redirect_nvram_literals(source):
 def main():
     p=argparse.ArgumentParser()
     p.add_argument("--source",type=Path,required=True)
+    p.add_argument('--introdon-profile',action='store_true')
     p.add_argument("--output-dir",type=Path,default=Path("build/hle-ram"))
     p.add_argument("--software-input-shadow",action="store_true")
     p.add_argument("--irq-depth",action="store_true")
@@ -74,6 +76,8 @@ def main():
     p.add_argument("--pad-hblank-worker",action="store_true")
     p.add_argument("--stv-bios",type=Path)
     a=p.parse_args();out=a.output_dir.resolve();out.mkdir(parents=True,exist_ok=True)
+    if a.introdon_profile and not a.startup_scu_services:
+        p.error('--introdon-profile requires the shared startup profile')
     if a.coin_main_clock and not a.coin_trial:p.error('--coin-main-clock requires --coin-trial')
     if a.resident_backup_callbacks and not a.startup_scu_services:p.error('--resident-backup-callbacks requires startup SCU services')
     if a.resident_input_edges and not a.resident_backup_callbacks:p.error('--resident-input-edges requires guarded backup callbacks')
@@ -507,6 +511,7 @@ gameplay_right_publish:
             assembly=out/'resident-game-ports.s'
             subprocess.run(['sh-elf-gcc','-m2','-mb','-Os','-ffreestanding','-fno-builtin','-S',
                 *(['-DSATURN_PAD_INPUT'] if a.saturn_pad_input else []),
+                *(['-DINTRODON_INPUT'] if a.introdon_profile else []),
                 str(Path(__file__).resolve().parents[1]/'runtime/resident_game_ports.c'),'-o',str(assembly)],check=True)
             adapted+='\n    .text\n    .org 0x4200,0\n'+assembly.read_text().replace('_cd_','cd_').replace('.L','.Lports')
         if a.resident_system_config:
@@ -560,11 +565,27 @@ cd_pad_real_poll: .long stv_smpc_pad_poll
         if a.pad_hblank_worker:
             adapted=adapted.replace('cd_frame_clock_call: .long cd_pad_frame_clock','cd_frame_clock_call: .long cd_pad_window_dispatch',1)
             adapted+='\n'+(Path(__file__).resolve().parents[1]/'runtime/pad_hblank_worker.s').read_text()
+        if a.introdon_profile:
+            if bios[0x67b8:0x67ee] != bytes(54):
+                raise ValueError('Unexpected backup reset zero template')
+            from introdon_hle import adapt
+            adapted=adapt(adapted)
+            assembly=out/'introdon-dma.s'
+            subprocess.run(['sh-elf-gcc','-m2','-mb','-Os','-ffreestanding','-fno-builtin','-S',
+                str(Path(__file__).resolve().parents[1]/'runtime/introdon_dma.c'),
+                '-o',str(assembly)],check=True)
+            adapted+='\n    .text\n'+assembly.read_text().replace('_intro_dma','intro_dma').replace('.L','.Lintrodma')
+            assembly=out/'introdon-error-screen.s'
+            subprocess.run(['sh-elf-gcc','-m2','-mb','-Os','-ffreestanding','-fno-builtin','-S',
+                str(Path(__file__).resolve().parents[1]/'runtime/diagnostic_screen.c'),
+                '-o',str(assembly)],check=True)
+            adapted+='\n    .text\n'+assembly.read_text().replace('.L','.Lintroscreen')
         adapted=align_resident_veneers(adapted)
         assemble_src=out/"hle-cd-input.s"
         assemble_src.write_text(adapted)
     ld=out/"hle.ld"
-    ld.write_text(hle_linker_script())
+    base=0x06004000 if a.introdon_profile else 0x00210000
+    ld.write_text(hle_linker_script(base,0x6000 if a.introdon_profile else 0x10000))
     subprocess.run(["sh-elf-as","--big","--isa=sh2","-o",str(out/"hle.o"),str(assemble_src)],check=True)
     subprocess.run(["sh-elf-ld","-EB","-T",str(ld),"-o",str(out/"hle.elf"),str(out/"hle.o")],check=True)
     subprocess.run(["sh-elf-objcopy","-j",".text","-O","binary",str(out/"hle.elf"),str(out/"HLE.BIN")],check=True)
@@ -575,18 +596,23 @@ cd_pad_real_poll: .long stv_smpc_pad_poll
              "stv_signed_accumulate":0x100,"stv_channel_address":0x1e0,
              "stv_memset":0x220,"stv_vblank_clock_update":0x260}
     for name,offset in offsets.items():
-        if table.get(name)!=0x00210000+offset: raise ValueError(f"Unexpected entry {name}")
+        if table.get(name)!=base+offset: raise ValueError(f"Unexpected entry {name}")
     data=(out/"HLE.BIN").read_bytes()
     if a.software_input_shadow:
         for old in redirects:
             if int(old,16).to_bytes(4,"big") in data:
                 raise ValueError("Custom CS2 input pointer remains")
     manifest={"status":"ram-relocation-diagnostic-not-game-runtime",
-        "base":"0x00210000","uncached_load_address":"0x20210000",
+        "base":f'0x{base:08x}',"uncached_load_address":f'0x{base|0x20000000:08x}',
         "size":len(data),"source":str(src),"source_sha256":hashlib.sha256(src.read_bytes()).hexdigest(),
         "sha256":hashlib.sha256(data).hexdigest(),
         "leaf_entries":{name:hex(table[name]) for name in offsets},
         "unadapted_dependencies":["CS0/CS1 source relocation","custom CS2 input shadow","hardware init/resident ownership"]}
+    if a.introdon_profile:
+        manifest['introdon_services']={name:hex(table[name]) for name in
+            ('intro_reinit','intro_record_write','intro_record_read','intro_sound_boot',
+             'intro_dma_direct','intro_dma_config','intro_answer_query','intro_answer_buzz')}
+        manifest['introdon_services']['diagnostic_grid']=hex(table['_diagnostic_grid'])
     if a.software_input_shadow:
         manifest["input_shadow_redirects"]=redirects
         manifest["adapted_source_sha256"]=hashlib.sha256(assemble_src.read_bytes()).hexdigest()
@@ -695,13 +721,16 @@ cd_pad_real_poll: .long stv_smpc_pad_poll
     if a.software_nvram_shadow:
         allowed=set()
         if a.resident_backup_callbacks:
-            allowed={table[name]-0x00210000 for name in ('backup_base','backup_word_end','backup_long_end')}
+            allowed={table[name]-base for name in ('backup_base','backup_word_end','backup_long_end')}
         if any(0x20180000<=int.from_bytes(data[o:o+4],'big')<0x20190000
                for o in range(0,len(data)-3,2) if o not in allowed):
             raise ValueError('Native Saturn backup-RAM literal remains')
         manifest['nvram_shadow']={'base':'0x20220000','size':65536,'volatile':True,
             'original_base':'0x20180000','source_address_occurrences':18,'channel_max':8,
             'guard_entry':'0x00211d00','initialization':'loader clears before first constructor'}
+        if a.introdon_profile:
+            manifest['nvram_shadow'].update(base='0x2600b000',size=0x4000,
+                channel_max=4,guard_entry=hex(table['cd_nv_halt']))
     if a.manual_pad_profile:
         manifest['manual_pad_profile']={'automatic_input_callback_disabled':True,
             'main_clock_retained':True,'software_shadows':'idle ffff','physical_hardware_tested':False}

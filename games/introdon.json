@@ -1,0 +1,120 @@
+{
+  "format": "saroo-stv-game-v1",
+  "game": "introdon",
+  "title": "Karaoke Quiz Intro Don Don!",
+  "port_status": "playable-with-graphics-issues",
+  "image_size": 33554432,
+  "roms": [
+    {
+      "name": "epr18937.13",
+      "size": 524288,
+      "sha1": "35d9751c1b23cfbf448f2a9e9cf3b121929368ae",
+      "operations": [
+        {
+          "type": "load16_byte",
+          "offset": 1
+        },
+        {
+          "type": "load16_byte",
+          "offset": 1048577
+        }
+      ]
+    },
+    {
+      "name": "mpr18944.7",
+      "size": 1048576,
+      "sha1": "0787ece9f89cc1847889adbf08ba5d3ccbc405de",
+      "operations": [
+        {
+          "type": "word_swap",
+          "offset": 2097152
+        },
+        {
+          "type": "word_swap",
+          "offset": 3145728
+        }
+      ]
+    },
+    {
+      "name": "mpr18939.2",
+      "size": 4194304,
+      "sha1": "3026c52ad542997d5b0e621b389c0e01240cb486",
+      "operations": [
+        {
+          "type": "word_swap",
+          "offset": 4194304
+        }
+      ]
+    },
+    {
+      "name": "mpr18940.3",
+      "size": 4194304,
+      "sha1": "b251609573c4b0ccc933188f32226855b25fd9da",
+      "operations": [
+        {
+          "type": "word_swap",
+          "offset": 8388608
+        }
+      ]
+    },
+    {
+      "name": "mpr18941.4",
+      "size": 4194304,
+      "sha1": "bf0f33495fb5c9de4ae5036cedda65b3ece217e8",
+      "operations": [
+        {
+          "type": "word_swap",
+          "offset": 12582912
+        }
+      ]
+    },
+    {
+      "name": "mpr18942.5",
+      "size": 4194304,
+      "sha1": "a75e3552b0fb99e0b253c0906f62fabcf204b735",
+      "operations": [
+        {
+          "type": "word_swap",
+          "offset": 16777216
+        }
+      ]
+    },
+    {
+      "name": "mpr18943.6",
+      "size": 4194304,
+      "sha1": "960dd3cb0b9eb1f18b8d0bc0da532b600d583ceb",
+      "operations": [
+        {
+          "type": "word_swap",
+          "offset": 20971520
+        }
+      ]
+    },
+    {
+      "name": "mpr18938.1",
+      "size": 4194304,
+      "sha1": "6c59f7da408b53f9fa7aa32c1b53328b5fd6334d",
+      "operations": [
+        {
+          "type": "word_swap",
+          "offset": 25165824
+        }
+      ]
+    }
+  ],
+  "auxiliary": [],
+  "boot": {
+    "cart_source": 35651584,
+    "size": 917504,
+    "destination": 100728832,
+    "entry": 100728832
+  },
+  "resident_rom": {
+    "cart_offset": 2097152,
+    "size": 27262976,
+    "sd_file": "/SAROO/STV/INTRODON.BIN"
+  },
+  "blockers": [
+    "Graphics corruption on real hardware, including the loading screen; investigation ongoing"
+  ]
+}

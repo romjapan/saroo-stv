@@ -8,6 +8,21 @@ typedef unsigned char u8;
 #define B(a) (*(volatile u8 *)(a))
 #endif
 void cd_resident_game_ports(void){
+#ifdef INTRODON_INPUT
+ u32 a=L(0x06000be8),c=L(0x06000bec);
+ /* Retain the acquisition edge independently of the current held packet.
+    The native buzzer can run after a later INTBACK has reported release. */
+ u32 down=(a&15u)&~L(0x2600a0a8);
+ L(0x2600a0a8)=a&15u;
+ if(down)L(0x2600a0ac)=down;
+ /* Native quiz: any A/B/C confirms the current menu row. X also confirms;
+    intro_answer_query supplies its direct row at the guarded menu call. */
+ a=(a&~8u)|((a&8)?1u:0u);
+ B(0x2021f041)=(u8)~a;
+ B(0x2021f043)=0xff;
+ B(0x2021f045)=(u8)(~c|0x80);
+ return;
+#endif
 #ifdef SATURN_PAD_INPUT
  B(0x2021f041)=(u8)~L(0x06002864);
  B(0x2021f043)=(u8)~L(0x06002868);
