@@ -3,6 +3,16 @@ from pathlib import Path
 import re
 
 def adapt(source):
+    # R is OREG3 bit7. Keep it in the ordinary active-high port-C packet.
+    anchor='smpc_no_coin:\n'
+    if source.count(anchor)!=1:raise ValueError('Unexpected service input seam')
+    source=source.replace(anchor,anchor+'''    mov r5,r0
+    tst #0x80,r0
+    bt intro_no_service
+    mov #8,r0
+    or r0,r7
+intro_no_service:
+''')
     # Cold BIOS shadow initializer 1c8b0..1c8c2 leaves every cycle slot
     # unassigned (CPU access), not the measured Baku game layout.
     old='    .word 0x4455, 0x77FF, 0xFFFF, 0xFFFF\n    .word 0x3036, 0x0112, 0xFFFF, 0xFFFF'
@@ -55,9 +65,42 @@ intro_raw_supported:
 intro_raw_src: .long 0x20100021
 intro_raw_dst: .long 0x2600a088
 '''
+    anchor='    mov.l   r7, @(4, r1)'
+    if source.count(anchor)!=1:raise ValueError('Unexpected pad acquisition seam')
+    source=source.replace(anchor,anchor+'''
+    sts.l pr,@-r15
+    mov.l intro_acquire_call,r0
+    jsr @r0
+    nop
+    lds.l @r15+,pr''')
+    source+='''
+    .align 2
+intro_answer_acquire:
+    ! R6 is the just-converted packet, before any replay/publication.
+    mov r6,r0
+    and #15,r0
+    mov.l intro_acquire_state,r2
+    mov.l @r2,r3
+    mov.l r0,@r2
+    not r3,r3
+    and r0,r3
+    mov.l r3,@(16,r2) ! current acquisition edge (a0b8)
+    tst r3,r3
+    bt intro_acquire_done
+    mov.l r3,@(4,r2) ! retained edge, survives release/replay
+intro_acquire_done:
+    mov.l r0,@(8,r2) ! coherent held answer snapshot (a0b0)
+    mov.l @(12,r2),r0
+    add #1,r0
+    rts
+    mov.l r0,@(12,r2) ! acquisition count (a0b4)
+    .align 2
+intro_acquire_state: .long 0x2600a0a8
+'''
     source=source.replace('cd_pad_cache_ptr: .long 0x06000BE8',
         'cd_pad_cache_ptr: .long 0x06000BE8\n'
-        'intro_raw_call: .long intro_raw_report')
+        'intro_raw_call: .long intro_raw_report\n'
+        'intro_acquire_call: .long intro_answer_acquire')
     # BIOS input service clears its raw ports before calling this hook. Replay
     # the packet acquired by the native frame dispatcher before edge/credit work.
     source=source.replace('input_pad_poll_ptr: .long cd_pad_after_main',
@@ -65,21 +108,20 @@ intro_raw_dst: .long 0x2600a088
     source=source.replace('timed_min: .word 1200','timed_min: .word 0')
     # Introdon has its own frame loop; the Baku main-loop gate never opens.
     # Poll once per VBlank, so the asynchronous timeout still counts frames.
-    # This native dispatcher runs at VBlank entry, before the game callback;
-    # unlike Baku's delayed worker it needs no minimum elapsed-time gate.
+    # Acquisition runs after the game's VBlank callback; unlike Baku's
+    # HBlank worker it needs no minimum elapsed-time gate.
     begin=source.index('cd_pad_window_dispatch:\n')
     end=source.index('    .align 2\nwindow_main:',begin)
     source=source[:begin]+'''cd_pad_window_dispatch:
     sts.l pr,@-r15
     mov.l r7,@-r15
     mov.l r4,@-r15
-    bsr cd_pad_frame_clock
-    nop
     mov.l @r15+,r4
     mov r4,r0
     cmp/eq #0x40,r0
     bf intro_pad_done
-    bsr cd_pad_timed_poll
+    mov.l intro_late_real_pad_ptr,r0
+    jsr @r0
     nop
     mov.l intro_pad_publish,r0
     jsr @r0
@@ -91,7 +133,55 @@ intro_pad_done:
     nop
     .align 2
 intro_pad_publish: .long cd_resident_game_ports
+intro_late_real_pad_ptr: .long stv_smpc_pad_poll
 '''+source[end:]
+    # VBE is sampled at the first HBlank in VBlank. SMPC acquisition before
+    # the game's callback can miss that deadline. Replay cached edges early;
+    # acquire once after the callback, which may finish outside VBlank.
+    block='''    mov.l   r7, @-r15
+    mov.l   cd_extended_resident_input_poll_ptr, r0
+    jsr     @r0
+    nop
+    mov.l   @r15+, r7
+'''
+    if source.count(block)!=1:raise ValueError('Unexpected pre-IRQ input seam')
+    anchor='    jsr     @r0\n    nop\nresident_scu_irq_restore:\n'
+    if source.count(anchor)!=1:raise ValueError('Unexpected post-IRQ seam')
+    source=source.replace(anchor,
+        '    mov.l r7,@-r15\n    jsr @r0\n    nop\n    mov.l @r15+,r7\n'
+        'resident_scu_irq_restore:\n    mov r7,r4\n'
+        '    mov.l intro_after_ptr,r0\n    jsr @r0\n    nop\n')
+    source=source.replace('cd_frame_clock_call: .long cd_pad_window_dispatch',
+        'intro_after_ptr: .long intro_after_irq\n'
+        'cd_frame_clock_call: .long cd_pad_frame_clock',1)
+    source+='''
+    .align 2
+intro_after_irq:
+    sts.l pr,@-r15
+    mov r4,r0
+    shlr2 r0
+    cmp/eq #0x40,r0
+    bf intro_after_done
+    mov #0x40,r4
+    mov.l intro_late_pad_ptr,r0
+    jsr @r0
+    nop
+    mov.l intro_panel_tick_ptr,r0
+    jsr @r0
+    nop
+'''
+
+    source+='''
+intro_after_done:
+    lds.l @r15+,pr
+    rts
+    nop
+    .align 2
+! Preserve the hardware-tested normal image layout; this word is unused.
+intro_layout_reserved: .long 0x0600f000
+intro_late_pad_ptr: .long cd_pad_window_dispatch
+intro_panel_tick_ptr: .long 0x0600fe00
+'''
     anchor='resident_veneer_installer_ptr: .long cd_scu_install'
     if source.count(anchor)!=1:
         raise ValueError('Unexpected introdon constructor seam')
@@ -137,6 +227,8 @@ intro_publish_ports: .long cd_resident_game_ports
     source+='\n'+(Path(__file__).resolve().parents[1]/'runtime/introdon_services.s').read_text()
     source=source.replace('resident_clear_longs:     .long 0x00003C00',
                           'resident_clear_longs:     .long 0x00001000')
+    # Every Introdon packet reader/writer uses the same uncached alias.
+    source=re.sub(r'0x06000[bB][eE]8', '0x26000be8', source)
     return relocate_owned_addresses(source)
 
 

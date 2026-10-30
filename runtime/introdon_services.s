@@ -1,4 +1,4 @@
-! Clean native services expressing BIOS service effects; no BIOS code.
+! Clean native implementations of BIOS service effects; no BIOS code.
 ! Called only by the guarded paid-answer query literal 060207a0. Native
 ! menu local selected-row is @(8,caller-SP); the normal helper reports edges.
 intro_answer_query:
@@ -46,7 +46,7 @@ intro_answer_done:
 intro_answer_mask: .word 0x0700
 intro_answer_confirm: .word 0x0100
     .align 2
-intro_answer_native: .long 0x0602c9da
+intro_answer_native: .long 0x0600ffb0
 intro_answer_cache: .long 0x06000be8
 intro_answer_pending: .long 0x2600a080
 ! The first A/B/C edge is the buzzer. Preserve its direct answer until the
@@ -58,9 +58,15 @@ intro_answer_buzz:
     nop
     tst r0,r0
     bt intro_answer_buzz_done
+    ! Sample held identity at the native consume point. A long hold must work
+    ! even if an earlier edge latch is absent; release falls back to acquisition.
+    mov.l intro_buzz_held,r1
+    mov.l @r1,r2
+    tst r2,r2
+    bf intro_buzz_identity
     mov.l intro_buzz_cache,r1
     mov.l @r1,r2
-    mov.l intro_buzz_pending,r1
+intro_buzz_identity:
     ! Native edge may come from a packet already released by the time the
     ! task runs. Never overwrite an earlier intent with a zero held mask.
     mov r2,r1
@@ -75,8 +81,9 @@ intro_answer_buzz_done:
     rts
     nop
     .align 2
-intro_buzz_native: .long 0x0602c9da
+intro_buzz_native: .long 0x0600ffb0
 intro_buzz_cache: .long 0x2600a0ac
+intro_buzz_held: .long 0x2600a0b0
 intro_buzz_pending: .long 0x2600a080
 ! This file is appended only by --introdon-profile.
     .align 2
@@ -113,6 +120,7 @@ intro_slot_done:
     .align 2
 intro_slot_table: .long intro_slots_data
 intro_slots_data:
+    .long 0x0600060c,0x0600ffd0
     .long 0x06000340,stv_resident_mask_set
     .long 0x06000344,stv_resident_mask_update
     .long 0x06000618,stv_resident_noop
@@ -215,6 +223,9 @@ intro_reinit:
     nop
     bsr intro_vectors
     nop
+    mov.l intro_panel_init_ptr,r0
+    jsr @r0
+    nop
     bsr intro_slots
     nop
     mov.l intro_vbr,r1
@@ -253,6 +264,7 @@ intro_display_done:
     nop
     .align 2
 intro_work_flags: .long 0x06000824
+intro_panel_init_ptr: .long 0x0600fe10
 intro_mask_update: .long stv_resident_mask_update
 intro_mask_set: .long stv_resident_mask_set
 intro_smpc: .long stv_smpc_command

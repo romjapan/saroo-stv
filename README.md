@@ -13,7 +13,7 @@ controller input and correct graphics.
 | Game | Real hardware status |
 | --- | --- |
 | Baku Baku Animal | Works on real hardware: full speed, sound, controller input and correct graphics. |
-| Karaoke Quiz Intro Don Don! | Boots and is playable on real hardware (coin/start/answers). Known issue: graphics corruption on real hardware, including the loading screen; investigation ongoing. |
+| Karaoke Quiz Intro Don Don! | Works on real hardware: correct graphics, controls, answers, TEST menu and saves that persist across power-off. Known issue: music volume sometimes changes during a song; cause not yet found. |
 
 ## How it works
 
@@ -86,6 +86,44 @@ python3 tools/build_manual_candidate.py \
 | Introdon | `SAROO/STV/INTRODON.BIN` | 26 MiB (27,262,976 bytes) | `0x200000` |
 
 Introdon ISO: `build/introdon/game/boot-diag.iso`. Resident image: `build/introdon/game/INTRODON.BIN`.
+
+| Saturn control | Introdon action |
+| --- | --- |
+| L | Insert coin |
+| Start | Start game |
+| A / B / C / X | Answers 1 / 2 / 3 / 4 |
+| Console RESET | TEST menu; select the current item in the menu |
+| R | SERVICE; move to the next item in the TEST menu |
+| Hold A+B+C+Start for about 2 seconds | Save and return to the SAROO menu |
+
+### TEST menu
+
+On the title/attract screen, tap console RESET briefly (about 0.2–0.3 seconds)
+to enter. Wait at least 1 second between RESET taps; holding RESET does not
+repeat. R moves to the next item; RESET selects/confirms. This is the
+cartridge's own test menu, not the ST-V BIOS system test.
+
+| Menu item | Function |
+| --- | --- |
+| INPUT TEST | Input test entry; detailed operation has not been verified. |
+| SOUND TEST | Sound playback test. |
+| GAME ASSIGNMENTS | Change game settings, such as difficulty EASY/NORMAL. |
+| BACKUP DATA CLEAR | Clear saved game data. **Erases settings and records; use with care.** |
+| QUIZ TEST | Quiz test entry; detailed operation has not been verified. |
+| EXIT | Leave the test menu and return to the game. |
+
+Verified example, starting with INPUT TEST selected and difficulty EASY:
+press R twice to reach GAME ASSIGNMENTS → RESET to enter → RESET to change
+EASY to NORMAL → R twice to the sub-page EXIT → RESET → R three times to
+the main EXIT → RESET to return to the game. Wait about 5 seconds after returning.
+
+Settings and records are saved automatically to Saturn internal memory as
+`INTRODONP12` (about 476 bytes) and survive power-off. Changes during a running
+game are saved when it ends or returns to attract; otherwise, saving occurs
+after changes settle. Holding A+B+C+Start for about 2 seconds also attempts to
+save before returning to the SAROO menu. If internal memory is full, unformatted or unavailable,
+the game continues, but changes may not be saved. The game never formats memory
+or deletes other games' saves.
 
 ## License
 

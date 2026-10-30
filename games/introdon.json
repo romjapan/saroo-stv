@@ -2,7 +2,7 @@
   "format": "saroo-stv-game-v1",
   "game": "introdon",
   "title": "Karaoke Quiz Intro Don Don!",
-  "port_status": "playable-with-graphics-issues",
+  "port_status": "hardware-verified-with-music-volume-issue",
   "image_size": 33554432,
   "roms": [
     {
@@ -115,6 +115,6 @@
     "sd_file": "/SAROO/STV/INTRODON.BIN"
   },
   "blockers": [
-    "Graphics corruption on real hardware, including the loading screen; investigation ongoing"
+    "Music volume sometimes changes during a song; cause not yet found"
   ]
 }

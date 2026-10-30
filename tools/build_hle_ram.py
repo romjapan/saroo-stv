@@ -611,7 +611,7 @@ cd_pad_real_poll: .long stv_smpc_pad_poll
     if a.introdon_profile:
         manifest['introdon_services']={name:hex(table[name]) for name in
             ('intro_reinit','intro_record_write','intro_record_read','intro_sound_boot',
-             'intro_dma_direct','intro_dma_config','intro_answer_query','intro_answer_buzz')}
+             'intro_dma_direct','intro_dma_config','intro_answer_query','intro_answer_buzz','stv_smpc_command')}
         manifest['introdon_services']['diagnostic_grid']=hex(table['_diagnostic_grid'])
     if a.software_input_shadow:
         manifest["input_shadow_redirects"]=redirects

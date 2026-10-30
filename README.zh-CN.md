@@ -11,7 +11,7 @@ Baku Baku Animal 已在真实的土星 + SAROO HW 1.3 上测试通过：满速�
 | 游戏 | 真机状态 |
 | --- | --- |
 | Baku Baku Animal | 真机正常：满速、有声音、手柄可用、画面正确。 |
-| Karaoke Quiz Intro Don Don! | 已在真机启动并可游玩（投币、开始、答题）。已知问题：真机仍有画面损坏，包括加载画面；正在调查。 |
+| Karaoke Quiz Intro Don Don! | 真机正常：画面、手柄、答案、TEST 菜单及断电后保留的存档均已验证。已知问题：音乐音量有时会在歌曲播放过程中变化；原因尚未找到。 |
 
 ## 工作原理
 
@@ -67,6 +67,41 @@ python3 tools/build_manual_candidate.py \
 | Introdon | `SAROO/STV/INTRODON.BIN` | 26 MiB (27,262,976 bytes) | `0x200000` |
 
 Introdon ISO: `build/introdon/game/boot-diag.iso`. 常驻镜像: `build/introdon/game/INTRODON.BIN`.
+
+| 土星操作 | Introdon 功能 |
+| --- | --- |
+| L | 投币 |
+| Start | 开始游戏 |
+| A / B / C / X | 答案 1 / 2 / 3 / 4 |
+| 主机 RESET | 进入 TEST 菜单；在菜单中选择当前项目 |
+| R | SERVICE；在 TEST 菜单中移到下一项 |
+| 按住 A+B+C+Start 约 2 秒 | 保存并返回 SAROO 菜单 |
+
+### TEST 菜单
+
+在标题或吸引画面短按主机 RESET（约 0.2–0.3 秒）进入。两次 RESET 之间至少
+间隔 1 秒；长按不会重复触发。R 移到下一项，RESET 选择或确认。这是卡带自己的
+测试菜单，不是 ST-V BIOS 的系统测试菜单。
+
+| 菜单项目 | 功能 |
+| --- | --- |
+| INPUT TEST | 输入测试入口；详细操作尚未验证。 |
+| SOUND TEST | 声音播放测试。 |
+| GAME ASSIGNMENTS | 修改游戏设置，例如难度 EASY/NORMAL。 |
+| BACKUP DATA CLEAR | 清除游戏保存数据。**会擦除设置和记录，请谨慎使用。** |
+| QUIZ TEST | 测验测试入口；详细操作尚未验证。 |
+| EXIT | 离开测试菜单并返回游戏。 |
+
+已验证的示例（初始选中 INPUT TEST，难度为 EASY）：R 两次移到 GAME ASSIGNMENTS
+→ RESET 进入 → RESET 将 EASY 改为 NORMAL → R 两次移到子页 EXIT → RESET
+→ R 三次移到主菜单 EXIT → RESET 返回游戏。返回后等待约 5 秒。
+
+设置和记录会自动保存到土星内部记忆体的 `INTRODONP12`（约 476 字节），断电后
+仍可保留。游戏进行中的变更在该局结束或回到吸引画面时保存；其他情况下在变更
+稳定后保存。按住 A+B+C+Start 约 2 秒，也会在返回 SAROO 菜单前尝试保存。
+内部记忆体已满、未格式化或
+不可用时，游戏仍可继续，但变更可能无法保存。游戏不会格式化记忆体或删除
+其他游戏的存档。
 
 ## 许可证
 

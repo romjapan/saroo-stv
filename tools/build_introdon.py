@@ -87,10 +87,26 @@ def build(a):
         raise ValueError('Unexpected introdon entry')
     services=json.loads((out.parent/'hle/manifest.json').read_text())['introdon_services']
     patches=[(0x06034dd0,0x060c77b8,int(services['intro_sound_boot'],16))]
+    patches.append((0x0602ca04,0x20100077,0x2600a0d8))
+    if program[0x26e02:0x26e0c].hex()!='d31a6232e402420b0009' or int.from_bytes(program[0x26e6c:0x26e70],'big')!=0x0600060c:
+        raise ValueError('Unexpected native TEST EXIT BIOS-service contract')
+    if hashlib.sha256(program[0x2bc88:0x2bca0]).hexdigest()!='19be8ca59c495b411dc575004a943ee20b5a643d56514fd0e72799630284cf8a':
+        raise ValueError('Unexpected native foreground frame-wait contract')
+    if hashlib.sha256(program[0x1f780:0x1f798]).hexdigest()!='56cb4b328e764d14f0afdfe37b8d375c7dbe1db0100e12e5ba8057a6f5a8d808':
+        raise ValueError('Unexpected native frame-delay contract')
+    patches.extend((0x06010000+i,0x0602f780,0x0600fec0)
+        for i in range(0,len(program)-3,4) if program[i:i+4]==bytes.fromhex('0602f780'))
+    patches.extend((0x06010000+i,0x0603bc88,0x0600fee0)
+        for i in range(0,len(program)-3,4) if program[i:i+4]==bytes.fromhex('0603bc88'))
     # This literal is shared only by the menu's down/confirm queries. The
     # adapter changes the row only on a native 0x700 confirmation edge.
     patches.append((0x060207a0,0x0602c9da,int(services['intro_answer_query'],16)))
     patches.append((0x060203fc,0x0602c9da,int(services['intro_answer_buzz'],16)))
+    if hashlib.sha256(program[0x1c9da:0x1c9f4]).hexdigest()!='543a71588d4f3a6df58206e41a61c7f439e10934c23de73d01f9975c0a90bc7b':
+        raise ValueError('Unexpected native edge-query contract')
+    patches.extend((0x06010000+i,0x0602c9da,0x0600ffb0)
+        for i in range(0,len(program)-3,4) if program[i:i+4]==bytes.fromhex('0602c9da')
+        and 0x06010000+i not in (0x060207a0,0x060203fc))
     if hashlib.sha256(program[0x103d4:0x108a4]).hexdigest()!= '51e257e1e720f4a983d548b67c09b9781578a8cba1bf9b961d3f9a88a7e4be63':
         raise ValueError('Unexpected paid-answer task/stack contract')
     if program[0x10782:0x10790].hex()!='950854f5d306430b000920088909':
@@ -120,8 +136,24 @@ def build(a):
               ','.join('{'+','.join(hex(v)+'u' for v in p)+'}' for p in patches)+'};\n')
     runtime = Path(__file__).resolve().parents[1] / 'runtime'
     extra_files={'HLE.BIN': (out.parent/'hle/HLE.BIN').read_bytes()}
-    diag=False
-    config+='#define INTRO_DIAG 0\n'
+    panel=out/'panel.s'
+    panel.write_text((runtime/'introdon_panel.s').read_text().replace(
+        'panel_command: .long 0','panel_command: .long '+services['stv_smpc_command']).replace('PANEL_COMMAND',services['stv_smpc_command']))
+    subprocess.run(['sh-elf-as','--big','--isa=sh2',str(panel),'-o',str(out/'panel.o')],check=True)
+    (out/'panel.ld').write_text('OUTPUT_ARCH(sh)\nSECTIONS { . = 0x0600fe00; .text : { *(.text*) } }\nASSERT(SIZEOF(.text)<=0x200,"Panel too large")\n')
+    subprocess.run(['sh-elf-ld','-EB','-T',str(out/'panel.ld'),str(out/'panel.o'),'-o',str(out/'panel.elf')],check=True)
+    subprocess.run(['sh-elf-objcopy','-O','binary',str(out/'panel.elf'),str(out/'PANEL.BIN')],check=True)
+    extra_files['PANEL.BIN']=(out/'PANEL.BIN').read_bytes()
+    persist=out/'persist.s'
+    subprocess.run(['sh-elf-gcc','-m2','-mb','-Os','-ffreestanding','-fno-builtin','-S',str(runtime/'introdon_persist.c'),'-o',str(persist)],check=True)
+    entry=out/'persist-entry.s'
+    entry.write_text('.text\nmov.l tick,r0\njmp @r0\nnop\n.align 2\ntick: .long _intro_persist_tick\n.org 0x10\nmov.l init,r0\njmp @r0\nnop\n.align 2\ninit: .long _intro_persist_init\n.global _intro_persist_command\n_intro_persist_command:\nmov.l command,r0\njmp @r0\nnop\n.align 2\ncommand: .long '+services['stv_smpc_command']+'\n')
+    for src,obj in [(persist,out/'persist.o'),(entry,out/'persist-entry.o')]:
+        subprocess.run(['sh-elf-as','--big','--isa=sh2',str(src),'-o',str(obj)],check=True)
+    (out/'persist.ld').write_text('OUTPUT_ARCH(sh)\nSECTIONS { . = 0x0600bc00; .text : { *(.text*) *(.rodata*) } /DISCARD/ : { *(.comment) *(.note*) } }\nASSERT(SIZEOF(.text)<=0x1400,"Persistence overlaps snapshot")\n')
+    subprocess.run(['sh-elf-ld','-EB','-T',str(out/'persist.ld'),str(out/'persist-entry.o'),str(out/'persist.o'),'-o',str(out/'persist.elf')],check=True)
+    subprocess.run(['sh-elf-objcopy','-O','binary',str(out/'persist.elf'),str(out/'PERSIST.BIN')],check=True)
+    extra_files['PERSIST.BIN']=(out/'PERSIST.BIN').read_bytes()
     config+='#define INTRO_PROGRESS %d\n'%a.loading_screen
     config+='#define INTRO_CD_WORK %du\n'%sum(len(v) for v in extra_files.values())
     probe = out / 'introdon_loader.c'
@@ -141,7 +173,7 @@ def build(a):
     manifest = json.loads((out / 'manifest.json').read_text())
     manifest.update(game='introdon', boot=descriptor['boot'],
                     shared_loading_screen=a.loading_screen,
-                    runtime_diagnostics=diag,
+                    runtime_diagnostics=False,
                     force_tcr2=bool(os.environ.get('SAROO_STV_FORCE_TCR2')),
                     guarded_patches=patches,
                     guarded_dma_helpers=DMA_HELPERS,

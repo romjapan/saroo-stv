@@ -9,12 +9,14 @@ typedef unsigned char u8;
 #endif
 void cd_resident_game_ports(void){
 #ifdef INTRODON_INPUT
- u32 a=L(0x06000be8),c=L(0x06000bec);
- /* Retain the acquisition edge independently of the current held packet.
-    The native buzzer can run after a later INTBACK has reported release. */
- u32 down=(a&15u)&~L(0x2600a0a8);
- L(0x2600a0a8)=a&15u;
- if(down)L(0x2600a0ac)=down;
+ u32 a=L(0x26000be8),c=L(0x26000bec);
+ if(L(0x2600a0d0))c|=4;
+ /* Native input routine also reads ST-V PDR2 bits1/2 (TEST/SERVICE).
+    Never read Saturn's peripheral electrical pins as cabinet switches. */
+ B(0x2600a0d8)=(u8)(6&~((c&12)>>1));
+ L(0x0600286c)|=c&12;
+ /* Acquisition owns the answer latch. Publication only replays that packet;
+    it must not recompute edges or mix cached and uncached packet aliases. */
  /* Native quiz: any A/B/C confirms the current menu row. X also confirms;
     intro_answer_query supplies its direct row at the guarded menu call. */
  a=(a&~8u)|((a&8)?1u:0u);
